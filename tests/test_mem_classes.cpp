@@ -130,3 +130,75 @@ TEST(MemSliceTest, MisalignedChunkAccess) {
     EXPECT_THROW(slice.getChunk(1), std::invalid_argument);
     EXPECT_THROW(slice.setChunk(1, 0xBEEF), std::invalid_argument);
 }
+
+// SequentialPageContext and SequentialPageMemAccess tests
+#include "memaccess.h"
+
+using namespace memmngr;
+
+TEST(SequentialPageContextTest, CreateAndAccess) {
+    MemAlloc allocator(8, 4);
+    SequentialPageContext ctx(1, allocator, 8, 2);
+    ctx.SetPage(0);
+    IMemAccess& accessor = ctx.getAccessor();
+    auto seqAccess = dynamic_cast<SequentialPageMemAccess*>(&accessor);
+    ASSERT_NE(seqAccess, nullptr);
+    EXPECT_NO_THROW(seqAccess->setUnit(0x42));
+    EXPECT_EQ(seqAccess->getUnit(), 0x42);
+}
+
+TEST(SequentialPageContextTest, IncrementOffsetAndPage) {
+    MemAlloc allocator(4, 4);
+    SequentialPageContext ctx(2, allocator, 4, 1);
+    ctx.SetPage(0);
+    IMemAccess& accessor = ctx.getAccessor();
+    auto seqAccess = dynamic_cast<SequentialPageMemAccess*>(&accessor);
+    ASSERT_NE(seqAccess, nullptr);
+    seqAccess->setUnit(0x11);
+    ctx.incrementOffset(4); // Should move to next page
+    ctx.SetPage(1);
+    EXPECT_NO_THROW(seqAccess->setUnit(0x22));
+}
+
+TEST(SequentialPageMemAccessTest, JumpTo) {
+    MemAlloc allocator(8, 4);
+    SequentialPageContext ctx(3, allocator, 8, 2);
+    IMemAccess& accessor = ctx.getAccessor();
+    auto seqAccess = dynamic_cast<SequentialPageMemAccess*>(&accessor);
+    ASSERT_NE(seqAccess, nullptr);
+    EXPECT_NO_THROW(seqAccess->jumpTo(1, 2));
+}
+
+TEST(MemUnitTest, CreateSequentialPageContext) {
+    MemUnit unit;
+    EXPECT_NO_THROW(unit.CreateSequentialPageContext(77));
+    auto ctx = unit.GetContext(77);
+    ASSERT_NE(ctx, nullptr);
+    auto seqCtx = dynamic_cast<SequentialPageContext*>(ctx.get());
+    ASSERT_NE(seqCtx, nullptr);
+}
+
+// Integration test for SequentialPageContext via MemUnit
+TEST(IntegrationTest, MemUnitSequentialPageContextAccess) {
+    MemUnit unit;
+    word_t ctxId = 200;
+    unit.CreateSequentialPageContext(ctxId);
+    auto ctx = unit.GetContext(ctxId);
+    ASSERT_NE(ctx, nullptr);
+    // Dynamic cast to SequentialPageContext
+    auto seqCtx = dynamic_cast<SequentialPageContext*>(ctx.get());
+    ASSERT_NE(seqCtx, nullptr);
+    seqCtx->SetPage(0);
+    IMemAccess& accessor = seqCtx->getAccessor();
+    auto seqAccess = dynamic_cast<SequentialPageMemAccess*>(&accessor);
+    ASSERT_NE(seqAccess, nullptr);
+    // Write and read at current offset
+    EXPECT_NO_THROW(seqAccess->setUnit(0x55));
+    EXPECT_EQ(seqAccess->getUnit(), 0x55);
+    // Increment offset and check page advance
+    word_t pageSize = 0xFFFF; // Should match the value used in CreateSequentialPageContext
+    seqCtx->incrementOffset(pageSize); // Should move to next page
+    seqCtx->SetPage(1);
+    EXPECT_NO_THROW(seqAccess->setUnit(0xAA));
+    EXPECT_EQ(seqAccess->getUnit(), 0xAA);
+}
