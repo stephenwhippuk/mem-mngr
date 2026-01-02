@@ -12,6 +12,8 @@ set(MEMMNGR_SOURCES
     ${PROJECT_SOURCE_DIR}/src/memalloc.cpp
     ${PROJECT_SOURCE_DIR}/src/memslice.cpp
     ${PROJECT_SOURCE_DIR}/src/pgcontext.cpp
+    ${PROJECT_SOURCE_DIR}/src/seqcontext.cpp
+    ${PROJECT_SOURCE_DIR}/src/seqaccess.cpp
     ${PROJECT_SOURCE_DIR}/src/memunit.cpp
     ${PROJECT_SOURCE_DIR}/src/primitives.cpp
     ${PROJECT_SOURCE_DIR}/src/engine.cpp

@@ -22,6 +22,11 @@ namespace memmngr {
 
     void MemUnit::CreateSequentialPageContext(word_t id) {
         // Implementation for sequential page context creation
+        word_t pageSize = 0xFFFF; // example page size
+        word_t initialCount = 4; // example initial count
+        auto allocator = std::make_shared<MemAlloc>(pageSize, 100); // example max blocks
+        auto context = std::make_shared<SequentialPageContext>(id, *allocator, pageSize, initialCount);
+        m_contexts[id] = context;
     }
 
     std::shared_ptr<IContext> MemUnit::GetContext(word_t id) {

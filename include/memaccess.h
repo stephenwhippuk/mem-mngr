@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include "primitives.h"
+#include "context.h"
 
 namespace memmngr {
     class IMemAccess {
@@ -22,6 +23,23 @@ namespace memmngr {
 
     private:
         std::shared_ptr<std::vector<chunk_t>> storage;
+    };
+
+    // forward declare
+    class SequentialPageContext;
+
+    class SequentialPageMemAccess : public IMemAccess {
+    public:
+        SequentialPageMemAccess(SequentialPageContext& context, word_t pageSize);
+        ~SequentialPageMemAccess() override;
+        unit_t getUnit() const;
+        chunk_t getChunk() const;
+        void setUnit(unit_t value);
+        void setChunk(chunk_t value);
+        void jumpTo(word_t pageIndex, word_t offset);
+    private:
+        SequentialPageContext& m_context;
+        word_t m_pageSize;
     };
 
 } // namespace memmngr  
